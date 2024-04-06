@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+
 jobs:
   fetch-secrets:
     runs-on: ubuntu-latest
@@ -26,7 +27,10 @@ jobs:
           echo "::set-output name=SERVER_USER::$(yaml getValue secrets.yml SERVER_USER)"
           echo "::set-output name=SSH_PRIVATE_KEY::$(yaml getValue secrets.yml SSH_PRIVATE_KEY)"
 
-      # Get the current repo
+  deploy:
+    needs: fetch-secrets
+    runs-on: ubuntu-latest
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v2
         
@@ -34,9 +38,9 @@ jobs:
       - name: Deploy to server
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ SERVER_HOST }}
-          username: ${{ SERVER_USER }}
-          key: ${{ SSH_PRIVATE_KEY }}
+          host: ${{ steps.read-secrets.outputs.SERVER_HOST }}
+          username: ${{ steps.read-secrets.outputs.SERVER_USER }}
+          key: ${{ steps.read-secrets.outputs.SSH_PRIVATE_KEY }}
           script: |
             cd /srv/personal-portfolio/Hundo
             ./deploy.sh
