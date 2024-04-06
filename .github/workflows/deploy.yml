@@ -15,26 +15,19 @@ jobs:
 
       - name: Fetch and Use Secrets
         id: fetch-secrets
-        uses: actions/github-script@v4
-        with:
-          script: |
-            const { execSync } = require('child_process');
-            const fs = require('fs');
-            const yaml = require('js-yaml');
+        run: |
+          mkdir -p secrets
+          echo "Downloading secrets..."
+          wget -O secrets/secrets.yml ${{ secrets.SECRETS_URL }}
 
-            // Download the secrets artifact
-            execSync('mkdir -p secrets');
-            execSync('echo "Downloading secrets..."');
-            execSync('wget -O secrets/secrets.yml ${{ secrets.SECRETS_URL }}');
+          # Read the secrets YAML file and set outputs
+          SERVER_HOST=$(grep 'SERVER_HOST:' secrets/secrets.yml | awk '{print $2}')
+          SERVER_USER=$(grep 'SERVER_USER:' secrets/secrets.yml | awk '{print $2}')
+          SSH_PRIVATE_KEY=$(grep 'SSH_PRIVATE_KEY:' secrets/secrets.yml | awk '{print $2}')
 
-            // Read and parse the secrets YAML file
-            const secretsYaml = fs.readFileSync('secrets/secrets.yml', 'utf8');
-            const secrets = yaml.load(secretsYaml);
-
-            // Set the secrets as outputs
-            console.log(`::set-output name=SERVER_HOST::${secrets.SERVER_HOST}`);
-            console.log(`::set-output name=SERVER_USER::${secrets.SERVER_USER}`);
-            console.log(`::set-output name=SSH_PRIVATE_KEY::${secrets.SSH_PRIVATE_KEY}`);
+          echo "::set-output name=SERVER_HOST::$SERVER_HOST"
+          echo "::set-output name=SERVER_USER::$SERVER_USER"
+          echo "::set-output name=SSH_PRIVATE_KEY::$SSH_PRIVATE_KEY"
 
       - name: Deploy to server
         uses: appleboy/ssh-action@master
