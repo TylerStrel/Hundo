@@ -9,32 +9,23 @@ jobs:
   fetch-secrets:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout secrets repository
         uses: actions/checkout@v2
-
-      # Fetch secrets.yml file from secrets repository
-      - name: Fetch Secrets File
-        uses: actions/download-artifact@v2
         with:
-          name: secrets
-          repository: TylerStrel/secrets
-
-      # Extract secret values from secrets.yml
-      - name: Read Secrets
-        id: read-secrets
-        run: |
-          echo "::set-output name=SERVER_HOST::$(yaml getValue secrets.yml SERVER_HOST)"
-          echo "::set-output name=SERVER_USER::$(yaml getValue secrets.yml SERVER_USER)"
-          echo "::set-output name=SSH_PRIVATE_KEY::$(yaml getValue secrets.yml SSH_PRIVATE_KEY)"
+          repository: TylerStrel/secrets 
+          path: secrets 
 
   deploy:
     needs: fetch-secrets
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        
-      # Deploy to the server
+      - name: Read Secrets
+        id: read-secrets
+        run: |
+          echo "::set-output name=SERVER_HOST::$(yaml getValue secrets/secrets.yml SERVER_HOST)"
+          echo "::set-output name=SERVER_USER::$(yaml getValue secrets/secrets.yml SERVER_USER)"
+          echo "::set-output name=SSH_PRIVATE_KEY::$(yaml getValue secrets/secrets.yml SSH_PRIVATE_KEY)"
+
       - name: Deploy to server
         uses: appleboy/ssh-action@master
         with:
