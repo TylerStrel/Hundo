@@ -6,39 +6,42 @@ on:
       - main
 
 jobs:
-  fetch-secrets:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Fetch secrets.yml file from secrets repository
-      - name: Fetch Secrets File
-        uses: actions/download-artifact@v2
+      - name: Fetch and Use Secrets
+        id: fetch-secrets
+        uses: actions/github-script@v4
         with:
-          name: secrets
-          repository: TylerStrel/secrets
-          path: .
+          script: |
+            const { execSync } = require('child_process');
+            const fs = require('fs');
+            const yaml = require('js-yaml');
 
-      # Extract secret values from secrets.yml
-      - name: Read Secrets
-        id: read-secrets
-        run: |
-          echo "::set-output name=SERVER_HOST::$(yaml getValue secrets.yml SERVER_HOST)"
-          echo "::set-output name=SERVER_USER::$(yaml getValue secrets.yml SERVER_USER)"
-          echo "::set-output name=SSH_PRIVATE_KEY::$(yaml getValue secrets.yml SSH_PRIVATE_KEY)"
+            // Download the secrets artifact
+            execSync('mkdir -p secrets');
+            execSync('echo "Downloading secrets..."');
+            execSync('wget -O secrets/secrets.yml ${{ secrets.SECRETS_URL }}');
 
-      # Get the current repo
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        
-      # Deploy to the server
+            // Read and parse the secrets YAML file
+            const secretsYaml = fs.readFileSync('secrets/secrets.yml', 'utf8');
+            const secrets = yaml.load(secretsYaml);
+
+            // Set the secrets as outputs
+            console.log(`::set-output name=SERVER_HOST::${secrets.SERVER_HOST}`);
+            console.log(`::set-output name=SERVER_USER::${secrets.SERVER_USER}`);
+            console.log(`::set-output name=SSH_PRIVATE_KEY::${secrets.SSH_PRIVATE_KEY}`);
+
       - name: Deploy to server
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ steps.read-secrets.outputs.SERVER_HOST }}
-          username: ${{ steps.read-secrets.outputs.SERVER_USER }}
-          key: ${{ steps.read-secrets.outputs.SSH_PRIVATE_KEY }}
+          host: ${{ steps.fetch-secrets.outputs.SERVER_HOST }}
+          username: ${{ steps.fetch-secrets.outputs.SERVER_USER }}
+          key: ${{ steps.fetch-secrets.outputs.SSH_PRIVATE_KEY }}
           script: |
             cd /srv/personal-portfolio/Hundo
             ./deploy.sh
