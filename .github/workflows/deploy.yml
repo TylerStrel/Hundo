@@ -17,7 +17,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: secrets
-          repository: username/secrets-repo  # Replace with the actual repository containing the secrets.yml file
+          repository: TylerStrel/secrets
 
       # Extract secret values from secrets.yml
       - name: Read Secrets
