@@ -6,33 +6,18 @@ on:
       - main
 
 jobs:
-  fetch-secrets:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Download secrets.yml file from secrets repository
-      - name: Download secrets
-        run: |
-          mkdir -p secrets
-          curl -o secrets/secrets.yml https://raw.githubusercontent.com/TylerStrel/secrets/main/secrets.yml
-
-      # Extract secret values from secrets.yml
-      - name: Read Secrets
-        id: read-secrets
-        run: |
-          echo "::set-output name=SERVER_HOST::$(cat secrets/secrets.yml | grep 'SERVER_HOST' | cut -d '=' -f2)"
-          echo "::set-output name=SERVER_USER::$(cat secrets/secrets.yml | grep 'SERVER_USER' | cut -d '=' -f2)"
-          echo "::set-output name=SSH_PRIVATE_KEY::$(cat secrets/secrets.yml | grep 'SSH_PRIVATE_KEY' | cut -d '=' -f2)"
-
-      # Deploy to the server
       - name: Deploy to server
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ steps.read-secrets.outputs.SERVER_HOST }}
-          username: ${{ steps.read-secrets.outputs.SERVER_USER }}
-          key: ${{ steps.read-secrets.outputs.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /srv/personal-portfolio/Hundo
             ./deploy.sh
