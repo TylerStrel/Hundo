@@ -12,6 +12,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Set repo name
+        id: set_repo_name
+        run: echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f 2)" >> $GITHUB_ENV
+
+
       - name: Deploy to server
         uses: appleboy/ssh-action@master
         with:
@@ -19,5 +24,5 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /srv/personal-portfolio/Hundo
+            cd /srv/personal-portfolio/${{ env.REPO_NAME }}
             ./deploy.sh
